@@ -8,6 +8,8 @@
 
 ## my own code/use libs
 -   parallel modules/dynamic priority -- we don't want to block or hog network IO on fruitless search paths (i.e. what if there's a fake login form that leads nowhere?)
+-   store data in database
+    -   serialize?
 -   http parser/redirect follower
     -   HTML form detector
     -   keyword detector
