@@ -8,7 +8,7 @@ See also <https://github.com/HenryFBP/hackthebox>
 
 ## Contibutors
 
-- @flexadecimal for XML knawledge
+- [@flexadecimal for valuable XML knawledge](http://github.com/flexadecimal)
 
 ## Why?
 
