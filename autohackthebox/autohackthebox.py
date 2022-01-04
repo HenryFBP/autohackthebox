@@ -1,6 +1,8 @@
 import enum
+import json
 from pprint import pprint
 from typing import Optional, List, Set
+from xml import etree
 from xml.etree.ElementTree import XMLParser, TreeBuilder
 
 import nmap3
@@ -9,12 +11,15 @@ import xmltodict
 nmap = nmap3.Nmap()
 
 
-class BoxVulnFeature(enum.Enum):
+class BoxVulnerabilityFeature(enum.Enum):
     """
-    represents a specific "vuln feature" that a box has
+    represents a specific "vulnerability feature" that a box has
     """
-    SSH = 1
-    HTTP = 2
+    SSH = "SSH"
+    HTTP = "HTTP"
+    HTTP_FORM = "HTTP_FORM"
+    HTTP_API = "HTTP_API"
+    SMB = "SMB"
 
 
 class GenericFuzzer:
@@ -31,10 +36,15 @@ class HTTPResponse:
 
 
 class NMAPResult:
-    def __init__(self, data: dict):
-        self.data = data
+    def __init__(self, raw_xml: str):
+        self.raw_xml = raw_xml
+        self.data = etree.ElementTree.fromstring(self.raw_xml)
 
-    def extractVulnFeatures(self) -> Set[BoxVulnFeature]:
+        print(self.data.get('scaninfo'))
+
+        1==1
+
+    def extractVulnFeatures(self) -> Set[BoxVulnerabilityFeature]:
         """From my results, what vulnerable features does this scan exhibit?"""
         raise NotImplemented('lol im lazy')
 
@@ -72,7 +82,7 @@ class Box:
 
         xml = nmap.run_command(cmd)
 
-        self.nmap_results.append(NMAPResult(xmltodict.parse(xml)))
+        self.nmap_results.append(NMAPResult(xml))
 
         return self.nmap_results
 

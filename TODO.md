@@ -6,7 +6,10 @@
 - https://pypi.org/project/dirbpy/
 - https://github.com/bostonlink/python-scripts
     - https://github.com/bostonlink/python-scripts/blob/master/exploit_db_search_v2.py
-- https://pypi.org/project/python-nmap/
+- https://pypi.org/project/python3-nmap/
+- https://jmespath.readthedocs.io/en/latest/
+- https://lxml.de/
+    - https://lxml.de/element_classes.html
 
 ## my own code/use libs
 
