@@ -1,12 +1,9 @@
 import enum
-import json
 from pprint import pprint
 from typing import Optional, List, Set
-from xml import etree
-from xml.etree.ElementTree import XMLParser, TreeBuilder
-
+from lxml import etree
+from lxml import objectify
 import nmap3
-import xmltodict
 
 nmap = nmap3.Nmap()
 
@@ -22,34 +19,21 @@ class BoxVulnerabilityFeature(enum.Enum):
     SMB = "SMB"
 
 
-class GenericFuzzer:
-    def __init__(self, target: str):
-        self.target = target
-
-
-class SubdomainFuzzer(GenericFuzzer):
-    pass
-
-
-class HTTPResponse:
-    pass
-
-
 class NMAPResult:
     def __init__(self, raw_xml: str):
         self.raw_xml = raw_xml
-        self.data = etree.ElementTree.fromstring(self.raw_xml)
-
-        print(self.data.get('scaninfo'))
-
-        1==1
+        self.data = etree.fromstring(self.raw_xml.encode('ascii'))
+        self.objectified_data = objectify.fromstring(self.raw_xml.encode('ascii'))
 
     def extractVulnFeatures(self) -> Set[BoxVulnerabilityFeature]:
         """From my results, what vulnerable features does this scan exhibit?"""
         raise NotImplemented('lol im lazy')
 
     def isOnline(self) -> bool:
-        pass
+        return self.data.xpath('//nmaprun/host[1]/status/@state')[0] == 'up'
+
+    def hasSSH(self) -> bool:
+        return
 
     # def
 
@@ -90,7 +74,10 @@ class Box:
 def hackthe(box: Box) -> Box:
     box.run_nmap_scan()
 
-    pprint(box.nmap_results[-1].data)
+    if box.nmap_results[-1].isOnline():
+        print(f"Most recent nmap scan says box {box} is online!")
+    else:
+        raise Exception(f"Box {box} is offline!")
 
     # todo do stuff based off results
 
