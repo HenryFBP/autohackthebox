@@ -3,6 +3,7 @@
 - https://infosecaddicts.com/python-and-metasploit/
 - https://github.com/sqlmapproject/sqlmap
 - https://github.com/nmmapper/python3-nmap
+    - https://github.com/nmmapper/python3-nmap/blob/master/nmap3/nmapparser.py
 - https://pypi.org/project/dirbpy/
 - https://github.com/bostonlink/python-scripts
     - https://github.com/bostonlink/python-scripts/blob/master/exploit_db_search_v2.py
