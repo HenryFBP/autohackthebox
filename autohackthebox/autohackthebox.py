@@ -1,22 +1,12 @@
-import enum
-from pprint import pprint
 from typing import Optional, List, Set
+
+import nmap3
 from lxml import etree
 from lxml import objectify
-import nmap3
+
+from VulnerabilityFeatures import BoxVulnerabilityFeature
 
 nmap = nmap3.Nmap()
-
-
-class BoxVulnerabilityFeature(enum.Enum):
-    """
-    represents a specific "vulnerability feature" that a box has
-    """
-    SSH = "SSH"
-    HTTP = "HTTP"
-    HTTP_FORM = "HTTP_FORM"
-    HTTP_API = "HTTP_API"
-    SMB = "SMB"
 
 
 class NMAPResult:
@@ -30,10 +20,16 @@ class NMAPResult:
         raise NotImplemented('lol im lazy')
 
     def isOnline(self) -> bool:
-        return self.data.xpath('//nmaprun/host[1]/status/@state')[0] == 'up'
+        """Does this nmap result say host is online?"""
+        state = self.data.xpath('//nmaprun/host[1]/status/@state')
+
+        if len(state) > 0:
+            return state[0] == 'up'
+
+        return False
 
     def hasSSH(self) -> bool:
-        return
+        return 'wow ;)'
 
     # def
 
@@ -77,7 +73,7 @@ def hackthe(box: Box) -> Box:
     if box.nmap_results[-1].isOnline():
         print(f"Most recent nmap scan says box {box} is online!")
     else:
-        raise Exception(f"Box {box} is offline!")
+        raise ConnectionError(f"Box {box} is offline!")
 
     # todo do stuff based off results
 
@@ -91,3 +87,9 @@ Horizontall = Box('horizontall',
 if __name__ == '__main__':
     hackthe(Horizontall)
     print("wow :3")
+
+    # dummyNmapResult = None
+    # with open('../data/Horizontall.xml', 'r') as f:
+    #     dummyNmapResult = NMAPResult(raw_xml='\n'.join(f.readlines()))
+    #
+    # dummyNmapResult.isOnline()
