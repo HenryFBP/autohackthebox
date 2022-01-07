@@ -56,6 +56,7 @@ class Box:
         self.name = name
         self.ip = ip
         self.hostname = hostname
+        self.http_scanner = HttpScanner(self)
         self.nmap_results: List[NMAPResult] = []
 
     def last_nmap_result(self):
@@ -69,6 +70,10 @@ class Box:
             return self.hostname
 
         raise ValueError("Error! {} doesn't have an IP or Hostname!".format(self))
+
+    def has_http_forms(self):
+        if self.http_scanner.has_results():
+            raise NotImplementedError("wowie check for le forms")
 
     def __repr__(self):
         return f"<Box name='{self.name}' ip='{self.ip}' hostname='{self.hostname}'>"
@@ -86,6 +91,23 @@ class Box:
         return self.nmap_results
 
 
+class HttpScanner:
+    def __init__(self, box: Box):
+        self.box = box
+        self.results = {}
+
+    def has_results(self):
+        return len(self.results) > 0
+
+    def initial_scan(self):
+        target = self.box.get_ip_or_hostname()
+
+        raise NotImplementedError("lol send a get request d00d")
+
+    def bruteforce_form(self):
+        raise NotImplementedError("pee pee pu pu")
+
+
 def hackthe(box: Box) -> Box:
     box.run_nmap_scan()
 
@@ -96,7 +118,11 @@ def hackthe(box: Box) -> Box:
 
     if box.last_nmap_result().hasHTTPServer():
         print("target has an HTTP server!")
-        raise NotImplementedError("TODO: send http request and search for <form> or HTTP 302s")
+
+        if not box.http_scanner.has_results():
+            box.http_scanner.initial_scan()
+
+        box.http_scanner.bruteforce_form()
 
     return box
 
