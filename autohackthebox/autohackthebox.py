@@ -25,7 +25,7 @@ class NMAPResult:
         state = self.data.xpath('//nmaprun/host/status/@state')
 
         if len(state) > 0:
-            return state[0] == 'up'  # TODO: How can I return the port? XPATH backreferences?
+            return state[0] == 'up'
 
         return False
 
