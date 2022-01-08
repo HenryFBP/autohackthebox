@@ -1,4 +1,4 @@
-from typing import Optional, List, Set
+from typing import Optional, List, Set, Union
 
 import nmap3
 import lxml
@@ -29,25 +29,27 @@ class NMAPResult:
 
         return False
 
-    def hasService(self, service: str) -> List[lxml.etree.Element]:
-        return self.data.xpath('//nmaprun/host/ports/port/service[@name="{}"]'.format(service))
+    def getServices(self, service: str) -> List[lxml.etree.Element]:
+        return self.data.xpath(f'//nmaprun/host/ports/port/service[@name="{service}"]')
 
-    def hasSSH(self) -> bool:
-        foo = self.hasService('ssh')
+    def getServicePort(self, service: str) -> Union[bool, int]:
+        """
+        :param service: Name of service, i.e. 'ssh'
+        :return: Port number of service, or False if service DNE.
+        """
+        foo = self.getServices(service)
 
         if len(foo) > 0:
-            return True  # TODO: How can I return the port? XPATH backreferences?
+            port = foo[0].xpath('../@portid')[0]
+            return port
 
         return False
 
-    # def
-    def hasHTTPServer(self):
-        foo = self.hasService('http')
+    def hasSSH(self) -> Union[bool, int]:
+        return self.getServicePort('ssh')
 
-        if len(foo) > 0:
-            return True  # TODO: How can I return the port? XPATH backreferences?
-
-        return False
+    def hasHTTPServer(self) -> Union[bool, int]:
+        return self.getServicePort('http')
 
 
 class Box:
@@ -140,12 +142,23 @@ def hackthe(box: Box) -> Box:
 Horizontall = Box('horizontall',
                   ip='10.10.11.105')
 
-if __name__ == '__main__':
-    hackthe(Horizontall)
-    print("wow :3")
 
-    # dummyNmapResult = None
-    # with open('../data/Horizontall.xml', 'r') as f:
-    #     dummyNmapResult = NMAPResult(raw_xml='\n'.join(f.readlines()))
-    #
-    # dummyNmapResult.isOnline()
+def fuckWithDummyNMAPresults():
+    dummyNmapResult = None
+    with open('../data/Horizontall.xml', 'r') as f:
+        dummyNmapResult = NMAPResult(raw_xml='\n'.join(f.readlines()))
+
+    gay1 = dummyNmapResult.isOnline()
+
+    gay2 = dummyNmapResult.getServices('ssh')
+    gay3 = dummyNmapResult.hasHTTPServer()
+    gay4 = dummyNmapResult.hasSSH()
+    print(" >:3c ")
+
+
+if __name__ == '__main__':
+    # # debug xml section
+    # fuckWithDummyNMAPresults()
+    # raise Exception("cummywummy, debug webug")
+
+    hackthe(Horizontall)

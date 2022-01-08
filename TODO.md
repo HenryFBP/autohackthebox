@@ -11,6 +11,10 @@
 - https://jmespath.readthedocs.io/en/latest/
 - https://lxml.de/
     - https://lxml.de/element_classes.html
+- https://devhints.io/xpath#axes-1
+- https://stackoverflow.com/a/30964145
+- https://json-schema.org/ we use this at work, when we write APIs we write schemata first and our dev scripts will
+  convert these to Typescript types that we can reference wherever
 
 ## my own code/use libs
 
