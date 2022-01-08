@@ -6,7 +6,7 @@ import nmap3
 import lxml
 from lxml import etree
 from lxml import objectify
-from mechanize import HTMLForm
+from mechanize import HTMLForm, TextControl, PasswordControl, Request
 
 from VulnerabilityFeatures import BoxVulnerabilityFeature
 
@@ -170,9 +170,32 @@ class HttpModule:
 
         print("about to bruteforce " + daForm.action)
 
-        fuzzywuzzycandidates = ['foobar', 'god', 'admin', 'password']
+        fuzzywuzzycandidates = ['foobar', 'god', 'admin', 'password', 'yuormom']
 
-        print("foo")
+
+
+        usernameControl: TextControl = daForm.find_control('username')
+        passwordControl: PasswordControl = daForm.find_control('password')
+
+        # main fuzzer loop...
+        # TODO can we use a different module to handle this?
+        for username in fuzzywuzzycandidates:
+            for password in fuzzywuzzycandidates:
+                combo = (username, password)
+                print("going to try " + ":".join(combo))
+
+                daForm['username'] = username
+                daForm['password'] = password
+
+                fuzzingRequest: Request = daForm.click()
+
+                fuzzingResponse = self.browser.open(url_or_request=fuzzingRequest)
+
+                # pprint(fuzzingResponse)
+
+                pprint(self.browser.links())
+
+                # TODO analyze response, use heuristics to determine if form post was successful
 
         raise NotImplementedError("todo finish bruteforce form")
 

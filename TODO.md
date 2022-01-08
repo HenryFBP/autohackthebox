@@ -17,7 +17,10 @@
   convert these to Typescript types that we can reference wherever
 - https://pythonrepo.com/repo/bahruzjabiyev-t-reqs-http-fuzzer-python-working-with-http
 - https://sdet.us/form-fuzzing-python-mechanize/
+  - https://mechanize.readthedocs.io/en/latest/forms_api.html
 - https://bahruz.me/papers/ccs2021treqs.pdf
+- https://ismailakkila.medium.com/black-hat-python-brute-forcing-html-authentication-forms-455e8f85a70a
+- https://stackoverflow.com/questions/31128665/brute-force-script-python-and-mechanize
 
 ## my own code/use libs
 
