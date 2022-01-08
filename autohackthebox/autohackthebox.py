@@ -1,5 +1,7 @@
-from typing import Optional, List, Set, Union
+from pprint import pprint
+from typing import Optional, List, Set, Union, Dict
 
+import mechanize
 import nmap3
 import lxml
 from lxml import etree
@@ -8,6 +10,9 @@ from lxml import objectify
 from VulnerabilityFeatures import BoxVulnerabilityFeature
 
 nmap = nmap3.Nmap()
+SERVICE_NAMES = [
+    'ssh', 'http',
+]
 
 
 class NMAPResult:
@@ -58,8 +63,9 @@ class Box:
         self.name = name
         self.ip = ip
         self.hostname = hostname
-        self.http_scanner = HttpScanner(self)
+        self.http_scanner = HttpModule(self)
         self.nmap_results: List[NMAPResult] = []
+        self.service_ports: Dict[str, int] = {}
 
     def has_nmap_results(self):
         return len(self.nmap_results) > 0
@@ -83,15 +89,28 @@ class Box:
     def __repr__(self):
         return f"<Box name='{self.name}' online='{self.is_online()}' ip='{self.ip}' hostname='{self.hostname}'>"
 
-    def run_nmap_scan(self, args=('-sC', '-sV')):
+    def get_service_port(self, serviceName: str) -> Union[int, None]:
+        return self.service_ports.get(serviceName, None)
 
-        cmd = [nmap.nmaptool]
-        cmd.extend(args)
-        cmd.extend([self.get_ip_or_hostname(), '-oX', '-'])
+    def run_nmap_scan(self, args=('-sC', '-sV'), import_nmap_xml_filepath: str = None):
 
-        xml = nmap.run_command(cmd)
+        if import_nmap_xml_filepath:
+            with open(import_nmap_xml_filepath, 'r') as f:
+                nmapres = NMAPResult(f.read())
+        else:
+            cmd = [nmap.nmaptool]
+            cmd.extend(args)
+            cmd.extend([self.get_ip_or_hostname(), '-oX', '-'])
 
-        self.nmap_results.append(NMAPResult(xml))
+            xml = nmap.run_command(cmd)
+
+            nmapres = NMAPResult(xml)
+
+        self.nmap_results.append(nmapres)
+
+        for servicename in SERVICE_NAMES:
+            if nmapres.getServicePort(servicename):
+                self.service_ports[servicename] = nmapres.getServicePort(servicename)
 
         return self.nmap_results
 
@@ -102,25 +121,36 @@ class Box:
         return self.last_nmap_result().isOnline()
 
 
-class HttpScanner:
+class HttpModule:
     def __init__(self, box: Box):
         self.box = box
-        self.results = {}
+        self.browser: mechanize.Browser = mechanize.Browser()
+        self.browser.set_handle_robots(False)  # lol
 
     def has_results(self):
-        return len(self.results) > 0
+        return False  # TODO NYI
 
-    def initial_scan(self):
+    def initial_http_scan(self):
         target = self.box.get_ip_or_hostname()
+        target = "http://" + target + ":" + self.box.get_service_port('http') + "/"
+        print("target=" + target)
 
-        raise NotImplementedError("lol send a get request d00d")
+        self.browser.open(target)
+
+        pprint(self.browser.links())
+
+        print("foo")
 
     def bruteforce_form(self):
-        raise NotImplementedError("pee pee pu pu")
+        if not self.has_results():
+            self.initial_http_scan()
+
+        raise NotImplementedError("todo bruteforce form")
 
 
 def hackthe(box: Box) -> Box:
-    box.run_nmap_scan()
+    # box.run_nmap_scan()
+    box.run_nmap_scan(import_nmap_xml_filepath='../data/DVWA.xml')  # save time, import xml
 
     if box.is_online():
         print(f"Most recent nmap scan says box {box} is online!")
@@ -129,9 +159,6 @@ def hackthe(box: Box) -> Box:
 
     if box.last_nmap_result().hasHTTPServer():
         print("target has an HTTP server!")
-
-        if not box.http_scanner.has_results():
-            box.http_scanner.initial_scan()
 
         box.http_scanner.bruteforce_form()
 
@@ -142,10 +169,13 @@ def hackthe(box: Box) -> Box:
 Horizontall = Box('horizontall',
                   ip='10.10.11.105')
 
+DVWA = Box('dvwa',
+           hostname='localhost')  # TODO can we pass port 6789?
+
 
 def familyfriendlyWithDummyNMAPresults():
     with open('../data/Horizontall.xml', 'r') as f:
-        dummyNmapResult = NMAPResult(raw_xml='\n'.join(f.readlines()))
+        dummyNmapResult = NMAPResult(raw_xml=f.read())
 
     gay1 = dummyNmapResult.isOnline()
 
@@ -160,4 +190,5 @@ if __name__ == '__main__':
     # familyfriendlyWithDummyNMAPresults()
     # raise Exception("familyfriendlymywummy, debug webug")
 
-    hackthe(Horizontall)
+    # hackthe(Horizontall)
+    hackthe(DVWA)
