@@ -15,6 +15,9 @@
 - https://stackoverflow.com/a/30964145
 - https://json-schema.org/ we use this at work, when we write APIs we write schemata first and our dev scripts will
   convert these to Typescript types that we can reference wherever
+- https://pythonrepo.com/repo/bahruzjabiyev-t-reqs-http-fuzzer-python-working-with-http
+- https://sdet.us/form-fuzzing-python-mechanize/
+- https://bahruz.me/papers/ccs2021treqs.pdf
 
 ## my own code/use libs
 

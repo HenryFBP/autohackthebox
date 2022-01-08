@@ -144,7 +144,6 @@ Horizontall = Box('horizontall',
 
 
 def familyfriendlyWithDummyNMAPresults():
-    dummyNmapResult = None
     with open('../data/Horizontall.xml', 'r') as f:
         dummyNmapResult = NMAPResult(raw_xml='\n'.join(f.readlines()))
 
