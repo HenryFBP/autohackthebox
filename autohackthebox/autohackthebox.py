@@ -143,7 +143,7 @@ Horizontall = Box('horizontall',
                   ip='10.10.11.105')
 
 
-def fuckWithDummyNMAPresults():
+def familyfriendlyWithDummyNMAPresults():
     dummyNmapResult = None
     with open('../data/Horizontall.xml', 'r') as f:
         dummyNmapResult = NMAPResult(raw_xml='\n'.join(f.readlines()))
@@ -158,7 +158,7 @@ def fuckWithDummyNMAPresults():
 
 if __name__ == '__main__':
     # # debug xml section
-    # fuckWithDummyNMAPresults()
-    # raise Exception("cummywummy, debug webug")
+    # familyfriendlyWithDummyNMAPresults()
+    # raise Exception("familyfriendlymywummy, debug webug")
 
     hackthe(Horizontall)
