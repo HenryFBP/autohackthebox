@@ -6,6 +6,7 @@ import nmap3
 import lxml
 from lxml import etree
 from lxml import objectify
+from mechanize import HTMLForm
 
 from VulnerabilityFeatures import BoxVulnerabilityFeature
 
@@ -13,6 +14,18 @@ nmap = nmap3.Nmap()
 SERVICE_NAMES = [
     'ssh', 'http',
 ]
+
+
+def determine_form_type(f: HTMLForm) -> str:
+    """
+    Use "advanced logic" and "epic facts" to determine what type of form a form is... wew
+    :param f:
+    :return:
+    """
+    if 'login' in f.action:
+        return 'login'
+
+    raise NotImplementedError("Not sure what to do for this form: " + repr(f))
 
 
 class NMAPResult:
@@ -71,7 +84,10 @@ class Box:
         return len(self.nmap_results) > 0
 
     def last_nmap_result(self):
-        return self.nmap_results[-1]
+        if self.has_nmap_results():
+            return self.nmap_results[-1]
+
+        return False
 
     def get_ip_or_hostname(self):
         if self.ip:
@@ -133,24 +149,39 @@ class HttpModule:
     def initial_http_scan(self):
         target = self.box.get_ip_or_hostname()
         target = "http://" + target + ":" + self.box.get_service_port('http') + "/"
-        print("target=" + target)
+        print("target={0}".format(target))
 
         self.browser.open(target)
 
-        pprint(self.browser.links())
-
-        print("foo")
-
-    def bruteforce_form(self):
+    def bruteforce_login_form(self):
         if not self.has_results():
             self.initial_http_scan()
 
-        raise NotImplementedError("todo bruteforce form")
+        links = self.browser.links()
+        print(type(links[0]))
+
+        forms = self.browser.forms()
+        print(type(forms[0]))
+
+        daForm: HTMLForm = forms[0]
+
+        if not (determine_form_type(daForm) is 'login'):
+            raise Exception("Cannot bruteforce this type of form: " + determine_form_type(daForm))
+
+        print("about to bruteforce " + daForm.action)
+
+        fuzzywuzzycandidates = ['foobar', 'god', 'admin', 'password']
+
+        print("foo")
+
+        raise NotImplementedError("todo finish bruteforce form")
 
 
 def hackthe(box: Box) -> Box:
     # box.run_nmap_scan()
-    box.run_nmap_scan(import_nmap_xml_filepath='../data/DVWA.xml')  # save time, import xml
+
+    # save time, import xml instead of running new nmap scan
+    box.run_nmap_scan(import_nmap_xml_filepath='../data/DVWA.xml')
 
     if box.is_online():
         print(f"Most recent nmap scan says box {box} is online!")
@@ -160,7 +191,7 @@ def hackthe(box: Box) -> Box:
     if box.last_nmap_result().hasHTTPServer():
         print("target has an HTTP server!")
 
-        box.http_scanner.bruteforce_form()
+        box.http_scanner.bruteforce_login_form()
 
     return box
 
