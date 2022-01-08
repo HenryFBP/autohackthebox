@@ -59,6 +59,9 @@ class Box:
         self.http_scanner = HttpScanner(self)
         self.nmap_results: List[NMAPResult] = []
 
+    def has_nmap_results(self):
+        return len(self.nmap_results) > 0
+
     def last_nmap_result(self):
         return self.nmap_results[-1]
 
@@ -76,7 +79,7 @@ class Box:
             raise NotImplementedError("wowie check for le forms")
 
     def __repr__(self):
-        return f"<Box name='{self.name}' ip='{self.ip}' hostname='{self.hostname}'>"
+        return f"<Box name='{self.name}' online='{self.is_online()}' ip='{self.ip}' hostname='{self.hostname}'>"
 
     def run_nmap_scan(self, args=('-sC', '-sV')):
 
@@ -89,6 +92,12 @@ class Box:
         self.nmap_results.append(NMAPResult(xml))
 
         return self.nmap_results
+
+    def is_online(self) -> bool:
+        if not self.has_nmap_results():
+            return False
+
+        return self.last_nmap_result().isOnline()
 
 
 class HttpScanner:
@@ -111,7 +120,7 @@ class HttpScanner:
 def hackthe(box: Box) -> Box:
     box.run_nmap_scan()
 
-    if box.last_nmap_result().isOnline():
+    if box.is_online():
         print(f"Most recent nmap scan says box {box} is online!")
     else:
         raise ConnectionError(f"Box {box} is offline!")
