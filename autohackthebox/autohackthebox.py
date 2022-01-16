@@ -16,6 +16,9 @@ SERVICE_NAMES = [
     'ssh', 'http',
 ]
 
+class CredentialsDatabase:
+    def __init__(self):
+        pass
 
 def determine_form_type(f: HTMLForm) -> str:
     """
@@ -152,7 +155,11 @@ class HttpModule:
         target = "http://" + target + ":" + self.box.get_service_port('http') + "/"
         print("target={0}".format(target))
 
-        self.browser.open(target)
+        try:
+            self.browser.open(target)
+        except ConnectionRefusedError as cre:
+            print("Connection refused to {}. Are you sure there is an HTTP server running?".format(target))
+            raise cre
 
     # TODO: This method is extremely long... ;_; fugg DDDD:
     def bruteforce_login_form(
@@ -184,7 +191,7 @@ class HttpModule:
         # TODO: What if there are multiple forms? Or 0?
         form_candidate: HTMLForm = all_forms[0]
 
-        if not (determine_form_type(form_candidate) is 'login'):
+        if determine_form_type(form_candidate) != 'login':
             raise Exception("Cannot bruteforce this type of form: " + determine_form_type(form_candidate))
 
         print("about to bruteforce " + form_candidate.action)
@@ -214,18 +221,19 @@ class HttpModule:
 
                 fuzzingResponse = self.browser.open(url_or_request=fuzzingRequest)
 
-                next_url: str = self.browser.geturl()
-                print("response url: " + next_url)
+                current_url: str = self.browser.geturl()
+                print("response url: " + current_url)
 
-                if next_url is not last_url:  # TODO: Formalize this heuristic, and what happens if it fails?
-                    print("Different URL! We will use this as the heuristic that proves this "
-                          "form has been successfully brute-forced!")
+                if not (current_url == last_url):  # TODO: Formalize this heuristic, and what happens if it fails?
+                    print("Different URL!\n {} != {}\n"
+                          " We will use this as the heuristic that proves this "
+                          "form has been successfully brute-forced!".format(last_url, current_url))
                     return username, password
 
                 # update how many urls we've seen before. not sure what we can use this metric for...
-                if next_url not in seen_urls:
-                    seen_urls[next_url] = 0
-                seen_urls[next_url] += 1
+                if current_url not in seen_urls:
+                    seen_urls[current_url] = 0
+                seen_urls[current_url] += 1
 
                 # TODO analyze response, use heuristics to determine if form post was successful
 
@@ -234,11 +242,9 @@ class HttpModule:
                 if len(all_forms) > 0:
                     form_candidate = all_forms[0]
                 else:
-                    raise ValueError(f"Got returned 0 forms from {self.browser.geturl()}!")
+                    raise ValueError("Got returned 0 forms from '{}'!".format(self.browser.geturl()))
 
-        raise NotImplementedError("todo finish bruteforce form")
-
-    raise ValueError("Did not find credentials!")
+        raise ValueError("Did not find credentials for form '{}'!".format(self.browser.geturl()))
 
 
 def hackthe(box: Box) -> Box:
@@ -257,7 +263,7 @@ def hackthe(box: Box) -> Box:
 
         creds = box.http_scanner.bruteforce_login_form()
 
-        print("Login form creds: ".format(creds))
+        print("Login form creds: {}".format(creds))
 
     return box
 
