@@ -1,3 +1,4 @@
+import urllib
 from pathlib import Path
 from pprint import pprint
 from typing import Optional, List, Set, Union, Dict, Tuple
@@ -7,7 +8,7 @@ import nmap3
 import lxml
 from lxml import etree
 from lxml import objectify
-from mechanize import HTMLForm, TextControl, PasswordControl, Request
+from mechanize import HTMLForm, TextControl, PasswordControl, Request, Link
 
 from VulnerabilityFeatures import BoxVulnerabilityFeature
 
@@ -16,9 +17,11 @@ SERVICE_NAMES = [
     'ssh', 'http',
 ]
 
+
 class CredentialsDatabase:
     def __init__(self):
         pass
+
 
 def determine_form_type(f: HTMLForm) -> str:
     """
@@ -160,6 +163,9 @@ class HttpModule:
         except ConnectionRefusedError as cre:
             print("Connection refused to {}. Are you sure there is an HTTP server running?".format(target))
             raise cre
+        except urllib.error.URLError as urle:
+            print("Connection refused to {}. Are you sure there is an HTTP server running?".format(target))
+            raise urle
 
     # TODO: This method is extremely long... ;_; fugg DDDD:
     def bruteforce_login_form(
@@ -182,13 +188,23 @@ class HttpModule:
         if not self.has_results():
             self.initial_http_scan()
 
-        links = self.browser.links()
-        print(type(links[0]))
+        # redirs: Dict[str, int] = self.browser.request.redirect_dict
+        # if len(redirs) > 0:
+        #     pprint(redirs)
+        #     raise NotImplementedError("We are being redirected! TODO")
 
-        all_forms = self.browser.forms()
-        print(type(all_forms[0]))
+        links: Tuple[Link] = self.browser.links()
+        print("links: ")
+        pprint(links)
+
+        all_forms: List[HTMLForm] = self.browser.forms()
+        print("forms: ")
+        pprint(all_forms)
 
         # TODO: What if there are multiple forms? Or 0?
+        if len(all_forms) <= 0:
+            raise Exception("There are no forms! Cannot bruteforce!")
+
         form_candidate: HTMLForm = all_forms[0]
 
         if determine_form_type(form_candidate) != 'login':
@@ -244,14 +260,17 @@ class HttpModule:
                 else:
                     raise ValueError("Got returned 0 forms from '{}'!".format(self.browser.geturl()))
 
-        raise ValueError("Did not find credentials for form '{}'!".format(self.browser.geturl()))
+        raise ValueError("Failed to find credentials for form '{}'!".format(self.browser.geturl()))
 
 
 def hackthe(box: Box) -> Box:
     # box.run_nmap_scan()
 
     # save time, import xml instead of running new nmap scan
-    box.run_nmap_scan(import_nmap_xml_filepath='../data/DVWA.xml')
+    if box.name == 'dvwa':
+        box.run_nmap_scan(import_nmap_xml_filepath='../data/DVWA.xml')
+    else:
+        box.run_nmap_scan()
 
     if box.is_online():
         print(f"Most recent nmap scan says box {box} is online!")
