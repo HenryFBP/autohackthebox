@@ -201,6 +201,13 @@ class HttpModule:
         print("forms: ")
         pprint(all_forms)
 
+
+        # if we're Horziontall, we need to load JS first to get forms... TODO load js? can we do this in mechanize?
+        # TODO: Fuck my life, mechanize cannot load js.
+        # https://stackoverflow.com/questions/802225/how-do-i-use-mechanize-to-process-javascript
+        # TODO Must switch to Selenium/WATIR or something
+
+
         # TODO: What if there are multiple forms? Or 0?
         if len(all_forms) <= 0:
             raise Exception("There are no forms! Cannot bruteforce!")
@@ -316,5 +323,5 @@ if __name__ == '__main__':
     # familyfriendlyWithDummyNMAPresults()
     # raise Exception("familyfriendlymywummy, debug webug")
 
-    # hackthe(Horizontall)
-    hackthe(DVWA)
+    hackthe(Horizontall)
+    # hackthe(DVWA)
