@@ -10,8 +10,9 @@ from lxml import objectify
 
 from selenium import webdriver
 from selenium.common.exceptions import WebDriverException
-from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.remote.webelement import WebElement
 
 from VulnerabilityFeatures import BoxVulnerabilityFeature
 
@@ -45,13 +46,13 @@ class CredentialsDatabase:
         pass
 
 
-def determine_form_type(form) -> str:
+def determine_form_type(form: WebElement) -> str:
     """
     Use "advanced logic" and "epic facts" to determine what type of form a form is... wew
     :param form:
     :return:
     """
-    if 'login' in form.action:
+    if 'login' in form.get_attribute('action'):
         return 'login'
 
     raise NotImplementedError("Not sure what to do for this form: " + repr(form))
@@ -166,10 +167,22 @@ class Box:
         return self.last_nmap_result().isOnline()
 
 
+def fill_form(form_candidate: WebElement, paramMap: Dict[str, str]):
+    for id in paramMap.keys():
+        cred = paramMap[id]
+        print(id, cred)
+
+        input_elt:WebElement = form_candidate.find_element(By.XPATH, f'//input[@name="{id}"]')
+
+        input_elt.send_keys(cred)
+
+    raise NotImplementedError("lol ")
+
+
 class HttpModule:
     def __init__(self, box: Box):
         self.box = box
-        self.browser = webdriver.Chrome()
+        self.driver = webdriver.Chrome()
         # self.browser.ignore_robots()
 
     def has_results(self):
@@ -177,16 +190,23 @@ class HttpModule:
 
     def initial_http_scan(self):
         target = self.box.get_ip_or_hostname()
-        target = "http://" + target + ":" + self.box.get_service_port('http') + "/"
-        print("target={0}".format(target))
+        protocol = 'http'
+        servicePort = self.box.get_service_port(protocol)
+
+        if not servicePort:
+            raise ValueError("HTTP has no service port! Examine nmap output.")
+
+        target = f"{protocol}://{target}:{servicePort}/"
+
+        print(f"target={target}")
 
         try:
-            self.browser.get(target)
+            self.driver.get(target)
         except ConnectionRefusedError as cre:
-            print("Connection refused to {}. Are you sure there is an HTTP server running?".format(target))
+            print(f"Connection refused to {target}. Are you sure there is an HTTP server running?")
             raise cre
         except urllib.error.URLError as urle:
-            print("Connection refused to {}. Are you sure there is an HTTP server running?".format(target))
+            print(f"Connection refused to {target}. Are you sure there is an HTTP server running?")
             raise urle
 
     # TODO: This method is extremely long... ;_; fugg DDDD:
@@ -214,35 +234,31 @@ class HttpModule:
         # if len(redirs) > 0:
         #     pprint(redirs)
         #     raise NotImplementedError("We are being redirected! TODO")
-
-        links: Tuple = self.browser.links()
+        links: List[WebElement] = self.driver.find_elements(By.XPATH, '//a')
         print("links: ")
         pprint(links)
 
-        all_forms: List = self.browser.forms()
+        all_forms: List[WebElement] = self.driver.find_elements(By.XPATH, '//form')
         print("forms: ")
         pprint(all_forms)
-
 
         # if we're Horziontall, we need to load JS first to get forms... TODO load js? can we do this in mechanize?
         # TODO: Fuck my life, mechanize cannot load js.
         # https://stackoverflow.com/questions/802225/how-do-i-use-mechanize-to-process-javascript
         # TODO Must switch to Selenium/WATIR or something
 
-
         # TODO: What if there are multiple forms? Or 0?
         if len(all_forms) <= 0:
             raise Exception("There are no forms! Cannot bruteforce!")
 
-        form_candidate: HTMLForm = all_forms[0]
+        form_candidate = all_forms[0]
 
         if determine_form_type(form_candidate) != 'login':
             raise Exception("Cannot bruteforce this type of form: " + determine_form_type(form_candidate))
 
-        print("about to bruteforce " + form_candidate.action)
+        print("about to bruteforce " + form_candidate.get_attribute('action'))
 
         seen_urls = {}
-        last_url = self.browser.geturl()
 
         # main fuzzer loop...
         # TODO can we use a different module to handle this?
@@ -256,17 +272,17 @@ class HttpModule:
                 print("going to try {0}".format(":".join((username, password))))
 
                 # TODO: Don't hardcode these input names
-                form_candidate['username'] = username
-                form_candidate['password'] = password
+                fill_form(form_candidate, {'username': username, 'password': password})
 
-                fuzzingRequest: Request = form_candidate.click()
+                form_candidate.submit()
+                fuzzingRequest = None
 
                 # store url we have before we send a request...
-                last_url = self.browser.geturl()
+                last_url = self.driver.current_url
 
-                fuzzingResponse = self.browser.open(url_or_request=fuzzingRequest)
+                fuzzingResponse = form_candidate.submit()
 
-                current_url: str = self.browser.geturl()
+                current_url: str = self.driver.current_url
                 print("response url: " + current_url)
 
                 if not (current_url == last_url):  # TODO: Formalize this heuristic, and what happens if it fails?
@@ -283,13 +299,13 @@ class HttpModule:
                 # TODO analyze response, use heuristics to determine if form post was successful
 
                 # this step is important, it copies the new CSRF token...
-                all_forms = self.browser.forms()
+                all_forms = self.driver.forms()
                 if len(all_forms) > 0:
                     form_candidate = all_forms[0]
                 else:
-                    raise ValueError("Got returned 0 forms from '{}'!".format(self.browser.geturl()))
+                    raise ValueError("Got returned 0 forms from '{}'!".format(self.driver.geturl()))
 
-        raise ValueError("Failed to find credentials for form '{}'!".format(self.browser.geturl()))
+        raise ValueError("Failed to find credentials for form '{}'!".format(self.driver.geturl()))
 
 
 def hackthe(box: Box) -> Box:
@@ -345,5 +361,5 @@ if __name__ == '__main__':
     # familyfriendlyWithDummyNMAPresults()
     # raise Exception("familyfriendlymywummy, debug webug")
 
-    hackthe(Horizontall)
-    # hackthe(DVWA)
+    # hackthe(Horizontall)
+    hackthe(DVWA)
