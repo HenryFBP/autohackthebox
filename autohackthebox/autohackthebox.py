@@ -3,14 +3,36 @@ from pathlib import Path
 from pprint import pprint
 from typing import Optional, List, Set, Union, Dict, Tuple
 
-import mechanize
 import nmap3
 import lxml
 from lxml import etree
 from lxml import objectify
-from mechanize import HTMLForm, TextControl, PasswordControl, Request, Link
+
+from selenium import webdriver
+from selenium.common.exceptions import WebDriverException
+from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.common.keys import Keys
 
 from VulnerabilityFeatures import BoxVulnerabilityFeature
+
+try:
+    webdriver.Chrome()
+except (WebDriverException, FileNotFoundError) as wde:
+    print("Please go to https://chromedriver.chromium.org/downloads and put the webdriver in PATH!")
+    print("Alternatively, if on linux, run this in bash:\n\n")
+    print("""
+    
+# install chrome browser
+apt-get -y install chromium
+
+# install chromedriver
+if [ ! -f /bin/chromedriver ]; then
+    pushd /tmp
+    wget https://chromedriver.storage.googleapis.com/97.0.4692.71/chromedriver_linux64.zip
+    unzip chromedriver_linux64.zip
+    mv chromedriver /bin/
+fi\n\n""")
+    raise wde
 
 nmap = nmap3.Nmap()
 SERVICE_NAMES = [
@@ -23,16 +45,16 @@ class CredentialsDatabase:
         pass
 
 
-def determine_form_type(f: HTMLForm) -> str:
+def determine_form_type(form) -> str:
     """
     Use "advanced logic" and "epic facts" to determine what type of form a form is... wew
-    :param f:
+    :param form:
     :return:
     """
-    if 'login' in f.action:
+    if 'login' in form.action:
         return 'login'
 
-    raise NotImplementedError("Not sure what to do for this form: " + repr(f))
+    raise NotImplementedError("Not sure what to do for this form: " + repr(form))
 
 
 class NMAPResult:
@@ -147,8 +169,8 @@ class Box:
 class HttpModule:
     def __init__(self, box: Box):
         self.box = box
-        self.browser: mechanize.Browser = mechanize.Browser()
-        self.browser.set_handle_robots(False)  # lol
+        self.browser = webdriver.Chrome()
+        # self.browser.ignore_robots()
 
     def has_results(self):
         return False  # TODO NYI
@@ -159,7 +181,7 @@ class HttpModule:
         print("target={0}".format(target))
 
         try:
-            self.browser.open(target)
+            self.browser.get(target)
         except ConnectionRefusedError as cre:
             print("Connection refused to {}. Are you sure there is an HTTP server running?".format(target))
             raise cre
@@ -193,11 +215,11 @@ class HttpModule:
         #     pprint(redirs)
         #     raise NotImplementedError("We are being redirected! TODO")
 
-        links: Tuple[Link] = self.browser.links()
+        links: Tuple = self.browser.links()
         print("links: ")
         pprint(links)
 
-        all_forms: List[HTMLForm] = self.browser.forms()
+        all_forms: List = self.browser.forms()
         print("forms: ")
         pprint(all_forms)
 
