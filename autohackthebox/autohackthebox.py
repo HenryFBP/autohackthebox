@@ -167,23 +167,35 @@ class Box:
         return self.last_nmap_result().isOnline()
 
 
-def fill_form(form_candidate: WebElement, paramMap: Dict[str, str]):
+def submit_form(form: WebElement) -> None:
+    selector = '//input[@type="submit"]'
+    input_elt: WebElement = form.find_element(By.XPATH, selector)
+    if input_elt:
+        input_elt.click()
+        return
+
+    form.submit()  # is this right?
+
+
+def fill_form(form: WebElement, paramMap: Dict[str, str]) -> WebElement:
     for id in paramMap.keys():
         cred = paramMap[id]
         print(id, cred)
 
-        input_elt: WebElement = form_candidate.find_element(By.XPATH, f'//input[@name="{id}"]')
+        selector = f'//input[@name="{id}"]'
+        input_elt: WebElement = form.find_element(By.XPATH, selector)
+
+        print(f"Filled {selector} with {cred}")
 
         input_elt.send_keys(cred)
 
-    raise NotImplementedError("lol ")
+    return form
 
 
 class HttpModule:
     def __init__(self, box: Box):
         self.box = box
-        self.driver = webdriver.Chrome()
-        # self.browser.ignore_robots()
+        self.driver: WebDriver = webdriver.Chrome()
 
     def has_results(self):
         return False  # TODO NYI
@@ -241,14 +253,12 @@ class HttpModule:
         print("forms: ")
         pprint(all_forms)
 
-        # if we're Horziontall, we need to load JS first to get forms... TODO load js? can we do this in mechanize?
-        # TODO: Fuck my life, mechanize cannot load js.
-        # https://stackoverflow.com/questions/802225/how-do-i-use-mechanize-to-process-javascript
-        # TODO Must switch to Selenium/WATIR or something
-
         # TODO: What if there are multiple forms? Or 0?
         if len(all_forms) <= 0:
             raise Exception("There are no forms! Cannot bruteforce!")
+
+        if len(all_forms) > 1:
+            raise NotImplementedError("There are >1 form! TODO: Choose one!")
 
         form_candidate = all_forms[0]
 
@@ -257,52 +267,31 @@ class HttpModule:
 
         print("about to bruteforce " + form_candidate.get_attribute('action'))
 
-        seen_urls = {}
-
         # main fuzzer loop...
         # TODO can we use a different module to handle this?
-        username: str
-        for username in usernames:
+        for username, password in zip(usernames, passwords):
 
-            password: str
-            for password in passwords:
+            print("\ngoing to try {0}".format(":".join((username, password))))
 
-                print()
-                print("going to try {0}".format(":".join((username, password))))
+            # store url we have before we send a request...
+            last_url = self.driver.current_url
 
-                # TODO: Don't hardcode these input names
-                fill_form(form_candidate, {'username': username, 'password': password})
+            # TODO: Don't hardcode these input names
+            fill_form(form_candidate, {'username': username, 'password': password})
+            submit_form(form_candidate)
 
-                form_candidate.submit()
-                fuzzingRequest = None
+            # must update reference to forms from the DOM
+            all_forms = self.driver.find_elements(By.XPATH, '//form')
+            form_candidate = all_forms[0] if len(all_forms) > 0 else None
 
-                # store url we have before we send a request...
-                last_url = self.driver.current_url
+            current_url: str = self.driver.current_url
+            print("response url: " + current_url)
 
-                fuzzingResponse = form_candidate.submit()
-
-                current_url: str = self.driver.current_url
-                print("response url: " + current_url)
-
-                if not (current_url == last_url):  # TODO: Formalize this heuristic, and what happens if it fails?
-                    print("Different URL!\n {} != {}\n"
-                          " We will use this as the heuristic that proves this "
-                          "form has been successfully brute-forced!".format(last_url, current_url))
-                    return username, password
-
-                # update how many urls we've seen before. not sure what we can use this metric for...
-                if current_url not in seen_urls:
-                    seen_urls[current_url] = 0
-                seen_urls[current_url] += 1
-
-                # TODO analyze response, use heuristics to determine if form post was successful
-
-                # this step is important, it copies the new CSRF token...
-                all_forms = self.driver.forms()
-                if len(all_forms) > 0:
-                    form_candidate = all_forms[0]
-                else:
-                    raise ValueError("Got returned 0 forms from '{}'!".format(self.driver.geturl()))
+            if not (current_url == last_url):  # TODO: Formalize this heuristic, and what happens if it fails?
+                print("Different URL!\n {} != {}\n"
+                      " We will use this as the heuristic that proves this "
+                      "form has been successfully brute-forced!".format(last_url, current_url))
+                return username, password
 
         raise ValueError("Failed to find credentials for form '{}'!".format(self.driver.geturl()))
 
