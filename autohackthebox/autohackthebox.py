@@ -172,7 +172,7 @@ def fill_form(form_candidate: WebElement, paramMap: Dict[str, str]):
         cred = paramMap[id]
         print(id, cred)
 
-        input_elt:WebElement = form_candidate.find_element(By.XPATH, f'//input[@name="{id}"]')
+        input_elt: WebElement = form_candidate.find_element(By.XPATH, f'//input[@name="{id}"]')
 
         input_elt.send_keys(cred)
 
@@ -188,9 +188,8 @@ class HttpModule:
     def has_results(self):
         return False  # TODO NYI
 
-    def initial_http_scan(self):
+    def initial_http_scan(self, protocol='http'):
         target = self.box.get_ip_or_hostname()
-        protocol = 'http'
         servicePort = self.box.get_service_port(protocol)
 
         if not servicePort:
