@@ -1,11 +1,13 @@
-from autohackthebox.potatomodule import hackthe, Box
+from autohackthebox.potatomodule import hackthe, Box, test_chrome_webdriver
 import argparse
 
 if __name__ == '__main__':
 
+    test_chrome_webdriver()
+
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('host', help="The host to attack.", default=None)
+    parser.add_argument('--host', help="The host to attack.", default=None)
 
     args = parser.parse_args()
 

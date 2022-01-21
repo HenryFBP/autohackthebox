@@ -21,7 +21,8 @@ from autohackthebox.VulnerabilityFeatures import BoxVulnerabilityFeature
 
 def test_chrome_webdriver() -> None:
     try:
-        webdriver.Chrome()
+        wd = webdriver.Chrome()
+        wd.close()
     except (WebDriverException, FileNotFoundError) as wde:
         print("Please go to https://chromedriver.chromium.org/downloads and put the webdriver in PATH!")
         print("Alternatively, if on linux, run this in bash:\n\n")
@@ -69,7 +70,7 @@ class NMAPResult:
         self.data: lxml.etree.Element = etree.fromstring(self.raw_xml.encode('ascii'))
         self.objectified_data: lxml.objectify.ObjectifiedElement = objectify.fromstring(self.raw_xml.encode('ascii'))
 
-    def extractVulnFeatures(self) -> Set[BoxVulnerabilityFeature]:
+    def extractFeatures(self) -> Set[BoxVulnerabilityFeature]:
         """From my results, what vulnerable features does this scan exhibit?"""
         raise NotImplemented('lol im lazy')
 
@@ -328,13 +329,15 @@ class HttpModule:
 
 
 def hackthe(box: Box) -> Box:
-    # box.run_nmap_scan()
-
     # save time, import xml instead of running new nmap scan
     if box.name == 'dvwa':
         box.run_nmap_scan(import_nmap_xml_filepath='../data/DVWA.xml')
     else:
         box.run_nmap_scan()
+
+    features = box.nmap_results[-1].extractFeatures()
+    print(f'Vulnerability features of {box}:')
+    pprint(features)
 
     if box.is_online():
         print(f"Most recent nmap scan says box {box} is online!")
