@@ -16,4 +16,4 @@ Inspired by curiosity, boredom, and the desire to see if it's possible to automa
 
 ## Running
 
-    python -m autohackthebox <TARGET1, [TARGET2, ...]> [OPTIONS]
+    python -m autohackthebox <TARGET1, [TARGET2, ...]> [OPTIONS] [--help]

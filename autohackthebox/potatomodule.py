@@ -4,38 +4,41 @@ from pathlib import Path
 from pprint import pprint
 from typing import Optional, List, Set, Union, Dict, Tuple
 
-import nmap3
+# please name me ;_;
+
 import lxml
+import nmap3
 from lxml import etree
 from lxml import objectify
-
 from selenium import webdriver
 from selenium.common.exceptions import WebDriverException
 from selenium.webdriver.chrome.webdriver import WebDriver
 from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.remote.webelement import WebElement
 
-from VulnerabilityFeatures import BoxVulnerabilityFeature
+from autohackthebox.VulnerabilityFeatures import BoxVulnerabilityFeature
 
-try:
-    webdriver.Chrome()
-except (WebDriverException, FileNotFoundError) as wde:
-    print("Please go to https://chromedriver.chromium.org/downloads and put the webdriver in PATH!")
-    print("Alternatively, if on linux, run this in bash:\n\n")
-    print("""
-    
-# install chrome browser
-apt-get -y install chromium
 
-# install chromedriver
-if [ ! -f /bin/chromedriver ]; then
-    pushd /tmp
-    wget https://chromedriver.storage.googleapis.com/97.0.4692.71/chromedriver_linux64.zip
-    unzip chromedriver_linux64.zip
-    mv chromedriver /bin/
-fi\n\n""")
-    raise wde
+def test_chrome_webdriver() -> None:
+    try:
+        webdriver.Chrome()
+    except (WebDriverException, FileNotFoundError) as wde:
+        print("Please go to https://chromedriver.chromium.org/downloads and put the webdriver in PATH!")
+        print("Alternatively, if on linux, run this in bash:\n\n")
+        print("""
+
+    # install chrome browser
+    apt-get -y install chromium
+
+    # install chromedriver
+    if [ ! -f /bin/chromedriver ]; then
+        pushd /tmp
+        wget https://chromedriver.storage.googleapis.com/97.0.4692.71/chromedriver_linux64.zip
+        unzip chromedriver_linux64.zip
+        mv chromedriver /bin/
+    fi\n\n""")
+        raise wde
+
 
 nmap = nmap3.Nmap()
 SERVICE_NAMES = [
@@ -356,7 +359,6 @@ def hackthe(box: Box) -> Box:
     return box
 
 
-
 def familyfriendlyWithDummyNMAPresults():
     with open('../data/Horizontall.xml', 'r') as f:
         dummy_nmap_result = NMAPResult(raw_xml=f.read())
@@ -367,5 +369,3 @@ def familyfriendlyWithDummyNMAPresults():
     gay3 = dummy_nmap_result.hasHTTPServer()
     gay4 = dummy_nmap_result.hasSSH()
     print(" >:3c ")
-
-

@@ -1,6 +1,22 @@
-from autohackthebox import hackthe, Box
+from autohackthebox.potatomodule import hackthe, Box
+import argparse
 
 if __name__ == '__main__':
+
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument('host', help="The host to attack.", default=None)
+
+    args = parser.parse_args()
+
+    if args.host:
+        print("Attacking " + args.host)
+        daBox = Box(name=args.host, hostname=args.host)
+        hackthe(daBox)
+        exit(0)
+    else:
+        print("No arguments supplied. Hacking example boxes.")
+
     # # debug xml section
     # familyfriendlyWithDummyNMAPresults()
     # raise Exception("familyfriendlymywummy, debug webug")
