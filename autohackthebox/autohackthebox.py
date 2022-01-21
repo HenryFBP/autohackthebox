@@ -195,13 +195,8 @@ def fill_form(form: WebElement, paramMap: Dict[str, str]) -> WebElement:
 
 
 def load_lines_from_file(p: Path, encoding='ascii') -> List[str]:
-    items = []
-
     with open(p, 'r', encoding=encoding) as f:
-        for line in f.readlines():
-            items.append(line)
-
-    return items
+        return f.readlines()
 
 
 class HttpModule:
