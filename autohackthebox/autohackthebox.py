@@ -217,7 +217,7 @@ class HttpModule:
         return f"{protocol}://{target}:{servicePort}/{slug}"
 
     def initial_http_scan(self, protocol='http'):
-        target = self.build_url()
+        target = self.build_url(protocol)
 
         print(f"target={target}")
 
