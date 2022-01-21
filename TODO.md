@@ -1,3 +1,7 @@
+## other
+
+- https://python-poetry.org/
+
 ## python bindings
 
 - https://infosecaddicts.com/python-and-metasploit/
