@@ -10,13 +10,15 @@ class NMAPResult:
     def __init__(self, raw_xml: str):
         self.raw_xml = raw_xml
         self.nmap_data: lxml.etree.Element = etree.fromstring(self.raw_xml.encode('ascii'))
-        self.objectified_nmap_data: lxml.objectify.ObjectifiedElement = objectify.fromstring(self.raw_xml.encode('ascii'))
+        self.objectified_nmap_data: lxml.objectify.ObjectifiedElement = objectify.fromstring(
+            self.raw_xml.encode('ascii'))
 
     def extractFeatures(self) -> Set[BoxVulnerabilityFeature]:
         """From my results, what vulnerable features does this scan exhibit?"""
-        result = self.nmap_data
 
-        raise NotImplementedError("lazy!! >:3c ")
+        services = self.getAllServices()
+
+        raise NotImplementedError("LAZY! >:3c")
 
     def isOnline(self) -> bool:
         """Does this nmap result say host is online?"""
@@ -29,6 +31,9 @@ class NMAPResult:
 
     def getServices(self, service: str) -> List[lxml.etree.Element]:
         return self.nmap_data.xpath(f'//nmaprun/host/ports/port/service[@name="{service}"]')
+
+    def getAllServices(self) -> List[lxml.etree.Element]:
+        return self.nmap_data.xpath('//service')
 
     def getServicePort(self, service: str) -> Union[bool, int]:
         """
