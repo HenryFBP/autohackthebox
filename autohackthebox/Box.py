@@ -2,21 +2,18 @@ import os.path
 import urllib
 from pathlib import Path
 from pprint import pprint
-from typing import Optional, List, Set, Union, Dict, Tuple
+from typing import Optional, List, Union, Dict, Tuple
 
 # please name me ;_;
 
-import lxml
 import nmap3
-from lxml import etree
-from lxml import objectify
 from selenium import webdriver
 from selenium.common.exceptions import WebDriverException
 from selenium.webdriver.chrome.webdriver import WebDriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webelement import WebElement
 
-from autohackthebox.VulnerabilityFeatures import BoxVulnerabilityFeature
+from NMAPResult import NMAPResult
 
 
 def test_chrome_webdriver() -> None:
@@ -62,48 +59,6 @@ def determine_form_type(form: WebElement) -> str:
         return 'login'
 
     raise NotImplementedError("Not sure what to do for this form: " + repr(form))
-
-
-class NMAPResult:
-    def __init__(self, raw_xml: str):
-        self.raw_xml = raw_xml
-        self.data: lxml.etree.Element = etree.fromstring(self.raw_xml.encode('ascii'))
-        self.objectified_data: lxml.objectify.ObjectifiedElement = objectify.fromstring(self.raw_xml.encode('ascii'))
-
-    def extractFeatures(self) -> Set[BoxVulnerabilityFeature]:
-        """From my results, what vulnerable features does this scan exhibit?"""
-        raise NotImplemented('lol im lazy')
-
-    def isOnline(self) -> bool:
-        """Does this nmap result say host is online?"""
-        state = self.data.xpath('//nmaprun/host/status/@state')
-
-        if len(state) > 0:
-            return state[0] == 'up'
-
-        return False
-
-    def getServices(self, service: str) -> List[lxml.etree.Element]:
-        return self.data.xpath(f'//nmaprun/host/ports/port/service[@name="{service}"]')
-
-    def getServicePort(self, service: str) -> Union[bool, int]:
-        """
-        :param service: Name of service, i.e. 'ssh'
-        :return: Port number of service, or False if service DNE.
-        """
-        foo = self.getServices(service)
-
-        if len(foo) > 0:
-            port = foo[0].xpath('../@portid')[0]
-            return port
-
-        return False
-
-    def hasSSH(self) -> Union[bool, int]:
-        return self.getServicePort('ssh')
-
-    def hasHTTPServer(self) -> Union[bool, int]:
-        return self.getServicePort('http')
 
 
 class Box:
