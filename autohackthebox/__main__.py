@@ -1,4 +1,4 @@
-from autohackthebox.potatomodule import hackthe, Box, test_chrome_webdriver
+from autohackthebox.Box import hackthe, Box, test_chrome_webdriver
 import argparse
 
 if __name__ == '__main__':
