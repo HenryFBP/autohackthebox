@@ -3,7 +3,7 @@ from typing import Set, List, Union
 import lxml
 from lxml import etree, objectify
 
-from VulnerabilityFeatures import BoxVulnerabilityFeature
+from VulnerabilityFeatures import BoxVulnerabilityFeature, extractFeature
 
 
 class NMAPResult:
@@ -16,9 +16,16 @@ class NMAPResult:
     def extractFeatures(self) -> Set[BoxVulnerabilityFeature]:
         """From my results, what vulnerable features does this scan exhibit?"""
 
+        features = []
+
         services = self.getAllServices()
 
-        raise NotImplementedError("LAZY! >:3c")
+        for service in services:
+            feature = extractFeature(service)
+            if feature:
+                features.append(feature)
+
+        return features
 
     def isOnline(self) -> bool:
         """Does this nmap result say host is online?"""

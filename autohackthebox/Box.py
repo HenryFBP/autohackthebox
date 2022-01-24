@@ -165,7 +165,8 @@ class HttpModule:
         # lazy init to fix chrome popping up
         self._webdriver: Union[WebDriver, None] = None
 
-    def get_webdriver(self) -> WebDriver:
+    def webdriver(self) -> WebDriver:
+        """Get webdriver."""
         if not self._webdriver:
             self._webdriver = webdriver.Chrome()
         return self._webdriver
@@ -188,7 +189,7 @@ class HttpModule:
         print(f"target={target}")
 
         try:
-            self.get_webdriver().get(target)
+            self.webdriver().get(target)
         except ConnectionRefusedError as cre:
             print(f"Connection refused to {target}. Are you sure there is an HTTP server running?")
             raise cre
@@ -200,15 +201,13 @@ class HttpModule:
     def bruteforce_form(
             self,
             target_url: str = None,
-            slug: str = None,
+            slug: str = '',
             usernames: Union[Path, List[str]] = None,
-            passwords: Union[Path, List[str]] = None) -> Tuple[str, str]:
+            passwords: Union[Path, List[str]] = None
+    ) -> Tuple[str, str]:
 
         if not target_url:
             target_url = self.build_url()
-
-        if not slug:
-            slug = ''
 
         if not usernames:
             usernames = ['bobby', 'robby', 'admin']
@@ -233,17 +232,13 @@ class HttpModule:
         target_url += slug
 
         print("Navigating to {}".format(target_url))
-        self.get_webdriver().get(target_url)
+        self.webdriver().get(target_url)
 
-        # redirs: Dict[str, int] = self.browser.request.redirect_dict
-        # if len(redirs) > 0:
-        #     pprint(redirs)
-        #     raise NotImplementedError("We are being redirected! TODO")
-        links: List[WebElement] = self.get_webdriver().find_elements(By.XPATH, '//a')
+        links: List[WebElement] = self.webdriver().find_elements(By.XPATH, '//a')
         print("links: ")
         pprint(links)
 
-        all_forms: List[WebElement] = self.get_webdriver().find_elements(By.XPATH, '//form')
+        all_forms: List[WebElement] = self.webdriver().find_elements(By.XPATH, '//form')
         print("forms: ")
         pprint(all_forms)
 
@@ -268,17 +263,17 @@ class HttpModule:
             print("\ngoing to try {0}".format(":".join((username, password))))
 
             # store url we have before we send a request...
-            last_url = self.get_webdriver().current_url
+            last_url = self.webdriver().current_url
 
             # TODO: Don't hardcode these input names
             fill_form(form_candidate, {'username': username, 'password': password})
             submit_form(form_candidate)
 
             # must update reference to forms from the DOM
-            all_forms = self.get_webdriver().find_elements(By.XPATH, '//form')
+            all_forms = self.webdriver().find_elements(By.XPATH, '//form')
             form_candidate = all_forms[0] if len(all_forms) > 0 else None
 
-            current_url: str = self.get_webdriver().current_url
+            current_url: str = self.webdriver().current_url
             print("response url: " + current_url)
 
             if not (current_url == last_url):  # TODO: Formalize this heuristic, and what happens if it fails?
@@ -287,7 +282,7 @@ class HttpModule:
                       "form has been successfully brute-forced!".format(last_url, current_url))
                 return username, password
 
-        raise ValueError("Failed to find credentials for form '{}'!".format(self.get_webdriver().geturl()))
+        raise ValueError("Failed to find credentials for form '{}'!".format(self.webdriver().current_url))
 
 
 def hackthe(box: Box) -> Box:
