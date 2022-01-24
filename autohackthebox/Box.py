@@ -13,7 +13,9 @@ from selenium.webdriver.chrome.webdriver import WebDriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webelement import WebElement
 
+from Forms import determine_form_type, fill_form, submit_form
 from NMAPResult import NMAPResult
+from Util import load_lines_from_file
 
 
 def test_chrome_webdriver() -> None:
@@ -47,18 +49,6 @@ SERVICE_NAMES = [
 class CredentialsDatabase:
     def __init__(self):
         pass
-
-
-def determine_form_type(form: WebElement) -> str:
-    """
-    Use "advanced logic" and "epic facts" to determine what type of form a form is... wew
-    :param form:
-    :return:
-    """
-    if 'login' in form.get_attribute('action'):
-        return 'login'
-
-    raise NotImplementedError("Not sure what to do for this form: " + repr(form))
 
 
 class Box:
@@ -126,36 +116,6 @@ class Box:
             return False
 
         return self.last_nmap_result().isOnline()
-
-
-def submit_form(form: WebElement) -> None:
-    selector = '//input[@type="submit"]'
-    input_elt: WebElement = form.find_element(By.XPATH, selector)
-    if input_elt:
-        input_elt.click()
-        return
-
-    form.submit()  # is this right?
-
-
-def fill_form(form: WebElement, paramMap: Dict[str, str]) -> WebElement:
-    for id in paramMap.keys():
-        cred = paramMap[id]
-        print(id, cred)
-
-        selector = f'//input[@name="{id}"]'
-        input_elt: WebElement = form.find_element(By.XPATH, selector)
-
-        print(f"Filled {selector} with {cred}")
-
-        input_elt.send_keys(cred)
-
-    return form
-
-
-def load_lines_from_file(p: Path, encoding='ascii') -> List[str]:
-    with open(p, 'r', encoding=encoding) as f:
-        return f.readlines()
 
 
 class HttpModule:
